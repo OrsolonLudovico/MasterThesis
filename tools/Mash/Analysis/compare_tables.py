@@ -168,33 +168,19 @@ def main():
     """Main analysis function."""
     
     # Parse command line arguments
-    if len(sys.argv) == 3:
-        original_file = sys.argv[1]
-        compressed_file = sys.argv[2]
-        print(f"Comparing: {original_file} (original) vs {compressed_file} (compressed)")
-    elif len(sys.argv) == 1:
-        # Default files for backward compatibility
-        original_file = "TestDataset_table.txt"
-        compressed_file = "Test2_table.txt"
-        print("\n" + "!"*70)
-        print("WARNING: Using default file names!")
-        print("!"*70)
-        print(f"Original:   {original_file}")
-        print(f"Compressed: {compressed_file}")
-        print("\nIMPORTANT: Make sure to put UNCOMPRESSED file first, COMPRESSED second")
-        print("Usage: python3 compare_tables.py <uncompressed_table.txt> <compressed_table.txt>")
-        print("!"*70 + "\n")
-    else:
-        print("Usage: python3 compare_tables.py <original_table.txt> <compressed_table.txt>")
+    if len(sys.argv) != 3:
+        print("ERROR: Missing required arguments!")
+        print("\nUsage: python3 compare_tables.py <original_table.txt> <compressed_table.txt>")
         print("\nArguments:")
         print("  original_table.txt    - Mash distance table for UNCOMPRESSED/ORIGINAL genomes")
         print("  compressed_table.txt  - Mash distance table for COMPRESSED genomes")
         print("\nNote: Order matters for Bland-Altman bias interpretation!")
         print("      Always put uncompressed/original file FIRST.")
-        print("\nIf no arguments provided, defaults to:")
-        print("  - TestDataset_table.txt (original)")
-        print("  - Test2_table.txt (compressed)")
         sys.exit(1)
+    
+    original_file = sys.argv[1]
+    compressed_file = sys.argv[2]
+    print(f"Comparing: {original_file} (original) vs {compressed_file} (compressed)")
     
     print("="*70)
     print("MASH DISTANCE TABLE COMPARISON - COMPRESSION QUALITY ANALYSIS")

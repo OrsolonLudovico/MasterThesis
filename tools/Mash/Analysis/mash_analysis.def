@@ -1,0 +1,40 @@
+BootStrap: library
+From: ubuntu:22.04
+
+%labels
+    Author OrsolonLudovico
+
+#using singularity help nomecontainer this is what will be written
+%help
+    This container includes Python 3 with libraries for data analysis:
+    - numpy, pandas, matplotlib, scipy
+    - For running compare_tables.py script
+    
+    Usage:
+       singularity exec python_analysis.sif python3 compare_tables.py original.txt compressed.txt
+
+#Modifies environment behaviours
+%environment
+    export LC_ALL=C
+
+#When I build this
+%post
+    echo "### Starting update + install from apt get ###"
+    
+    apt-get update 
+    apt-get install -y --no-install-recommends \
+        python3 \
+        python3-numpy \
+        python3-pandas \
+        python3-matplotlib \
+        python3-scipy
+    
+    apt-get clean
+    
+    echo "Python libraries installed!"
+
+%runscript
+    echo "Python Analysis Container"
+    echo "Available: python3, numpy, pandas, matplotlib, scipy"
+    exec /bin/bash "$@"
+

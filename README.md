@@ -12,12 +12,12 @@ Using Singularity and a computing cluster. For more information, look into the d
 
 # Which tool did I use?
 
-[USTAR](./USTAR): insert description in the future  
-[Fulgor](./Fulgor): insert description in the future  
-[Kmdiff](./Kmdiff): insert description in the future  
-[REINDEER2](./REINDEER2): insert description in the future  
-[Mash](./Mash): insert description in the future  
-[GGCAT](./GGCAT): insert description in the future  
+[USTAR](./tools/USTAR): insert description in the future  
+[Fulgor](./tools/Fulgor): insert description in the future  
+[Kmdiff](./tools/Kmdiff): insert description in the future  
+[REINDEER2](./tools/REINDEER2): insert description in the future  
+[Mash](./tools/Mash): insert description in the future  
+[GGCAT](./tools/GGCAT): insert description in the future  
 
 # Datasets
 

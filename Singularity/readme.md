@@ -36,7 +36,8 @@ singularity exec outputFile.sif /USTAR/build/ustar -h
   singularity exec -B /:/ outputFile.sif /USTAR/build/ustar -h
   ```
   binds the `/` folder on your machine to the `/` folder on the image.
-- I did not put the programs in *PATH* to be more deliberate when I use commands, so you have to specify the whole global path (or add it to *PATH* in the def file).
+- I did not put the programs in *PATH* to be more deliberate when I use commands, so you have to specify the whole global path (or add it to *PATH* in the `.def` file).
+- You can see some example on how to test the programs in the comments inside the `.def` file.
 
 # Modify USTAR
 

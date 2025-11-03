@@ -1,3 +1,7 @@
+# Why singularity?
+
+I maily used the [DEI cluster](https://www.dei.unipd.it/en/node/2284) in Padova to make all my computations. In that cluster users are not allowed to install programs; this means that a singularity image containing all the programs and files each user needs is the only way to use custom programs on the cluster.
+
 # Build the singularity image
 
 Download and install singularity using this [guide](https://docs.sylabs.io/guides/3.4/user-guide/). Now, in the folder in which you have your def file:

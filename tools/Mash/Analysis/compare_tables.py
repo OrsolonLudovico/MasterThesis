@@ -195,12 +195,28 @@ def main():
     if not np.array_equal(orig_genomes, comp_genomes):
         print("\nWARNING: Genome names don't match perfectly!")
         print("Attempting to align genomes...")
-        # Simple name matching (you might need more sophisticated matching)
-        orig_names = [g.split('/')[-1] for g in orig_genomes]
-        comp_names = [g.split('/')[-1] for g in comp_genomes]
+        
+        # Extract base names without extensions
+        # Handle various extensions: .fasta, .ustar.fa, .fa, etc.
+        def get_base_name(path):
+            name = path.split('/')[-1]
+            # Remove common extensions
+            for ext in ['.ustar.fa', '.fasta', '.fa', '.fna']:
+                if name.endswith(ext):
+                    name = name[:-len(ext)]
+                    break
+            return name
+        
+        orig_names = [get_base_name(g) for g in orig_genomes]
+        comp_names = [get_base_name(g) for g in comp_genomes]
+        
         if orig_names != comp_names:
-            print("ERROR: Cannot align genomes. Exiting.")
+            print("\nERROR: Cannot align genomes!")
+            print(f"Original genomes: {orig_names[:3]}...")
+            print(f"Compressed genomes: {comp_names[:3]}...")
             sys.exit(1)
+        
+        print("✓ Successfully aligned genomes by base name")
     
     print("\n" + "="*70)
     print("1. ERROR STATISTICS")

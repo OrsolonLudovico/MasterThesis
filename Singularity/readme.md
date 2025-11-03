@@ -1,8 +1,6 @@
 # Build the singularity image
 
-Download and install singularity using this [guide](https://docs.sylabs.io/guides/3.4/user-guide/)
-
-Now, in the folder in which you have your def file:
+Download and install singularity using this [guide](https://docs.sylabs.io/guides/3.4/user-guide/). Now, in the folder in which you have your def file:
 
 ```bash
 sudo singularity build outputFile.sif Container.def
@@ -12,19 +10,17 @@ This will result in the build of a singularity container called **outputFile.sif
 
 ## Testing:
 
+To enter the shell of the container.
 ```bash
 singularity shell outputFile.sif
-```
-
-To enter the shell of the container.  
-From here you can launch commands as in a normal Linux installation.  
-You can test USTAR, for example, from inside the shell:
+```  
+From here you can launch commands as in a normal Linux installation. From inside this shell you can test USTAR for example:
 
 ```bash
 /USTAR/build/ustar -h
 ```
 
-or from outside the shell, using the exec command:
+you can also do that from outside the shell, using the exec command:
 
 ```bash
 singularity exec outputFile.sif /USTAR/build/ustar -h
@@ -36,7 +32,7 @@ singularity exec outputFile.sif /USTAR/build/ustar -h
   singularity exec -B /:/ outputFile.sif /USTAR/build/ustar -h
   ```
   binds the `/` folder on your machine to the `/` folder on the image.
-- I did not put the programs in *PATH* to be more deliberate when I call a program, so you have to specify the whole global path (or add them to *PATH* in the def file).
+- I did not put the programs in *PATH* to be more deliberate when I use commands, so you have to specify the whole global path (or add it to *PATH* in the def file).
 
 # Modify USTAR
 

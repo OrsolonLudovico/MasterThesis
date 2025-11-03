@@ -1,0 +1,258 @@
+BootStrap: library
+From: ubuntu:22.04
+
+%labels
+    Author OrsolonLudovico
+
+#using singularity help nomecontainer this is what will be written
+%help
+    I will use this container to put all the necessary programs (cowsayis a simple program used to test)
+
+#Modifies environment behaviours
+%environment
+    #I can leave this as it is
+    export PATH=/usr/games:$PATH
+
+#Copy files from host to container
+%files
+    ustar.cpp /ustar.cpp
+
+#When I build this
+%post
+    #cowsay part/ studd i get from apt get
+    echo "### Starting update + install from apt get ###"
+
+    apt-get update 
+    apt-get install -y --no-install-recommends cowsay
+    #These are for BCALM (the last one is a necessary library)
+    apt-get install -y --no-install-recommends build-essential cmake git ca-certificates libgtest-dev zlib1g-dev wget tar
+    #These are for Fulgor
+    #Install rust
+    apt-get install -y --no-install-recommends  curl
+    #Many flags to disable interactivity
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+    apt-get install -y --no-install-recommends zlib1g
+    #I need to set the path otherwise the other programs won't find cargo and rustc
+    export PATH=/root/.cargo/bin:$PATH
+    # #These are for kmdiff
+    apt-get install -y --no-install-recommends libgsl-dev libopenblas-dev liblapacke-dev libbz2-dev
+
+    apt-get clean
+
+    ##################################################################################################################################
+    echo "Starting USTAR"
+
+        echo "### Starting BCALM2 ###"
+        cd /
+        #Install BCALM2
+        git clone --recursive https://github.com/GATB/bcalm 
+        cd bcalm
+        mkdir build
+        cd build
+        #Compiles what is in bcalm folder
+        cmake ..
+        #WARNING: IF COMPILING ON A SLURM JOB PUT 1 INSTEAD OF $(nproc) OTHERWISE IT WILL TRY TO USE ALL THE CORES (EVEN THE NON-ALLOCATED ONES)
+        make -j$(nproc)
+
+        ### TEST ### (use a test file in bacalm folder)
+        ### WARNING use -max-memory 15000 (for 15G) on Bcalm otherwise we will have memory overflow, also -nb-cores 16 for 16 cores###
+        # /bcalm/build/bcalm is the path of the executable, example: singularity exec cont.sif /bcalm/build/bcalm --help
+        # Test with singularity exec cont.sif /bcalm/build/bcalm -in /bcalm/test/minitip.fa -max-memory 15000 -nb-cores 16 -kmer-size 11 -abundance-min 2
+        # The file is in the example folder of the repository so it's mounted and doesn't depend on anything outside the container
+        # -in an also be used to provide a list of files (one per line). This list of file will be considered as a single input dile and will provide a single output
+        # ls -1 *.fastq > list_reads
+        # ./bcalm -in list_reads [..]
+        
+        echo "### BCALM2 installed, starting USTAR package ###"
+        #Install USTAR
+        cd /
+        git clone https://github.com/enricorox/USTAR
+        cd USTAR
+        
+        # I replace the file /USTAR/src/ustar.cpp with the modified version that allows to compress folders
+        cp /ustar.cpp /USTAR/src/ustar.cpp
+        rm /ustar.cpp
+
+        # Modify MAX_LINE_LEN da 100000 a 6000000 (the stack is around 6 MB to be safe, usually max stack is 8MB)
+        # This way i get rid of teh max 100000 limit error
+        sed -i 's/#define MAX_LINE_LEN 100000/#define MAX_LINE_LEN 6000000/' src/DBG.h
+
+        mkdir build
+        cd build
+        #Without the flag throws an error
+        cmake -DBUILD_TESTING=OFF -DCMAKE_CXX_FLAGS="-include cstdint" ..
+        #Just make ustar otherwise  it will get errors in the tests
+        make -j$(nproc) ustar
+
+        ### TEST ### (use the test file in BCALM)
+        ### WARNING use -max-memory 15000 (for 15G) on Bcalm otherwise we will have memory overflow, also -nb-cores 16 for 16 cores ###
+        # /USTAR/build/ustar will be the path of tyhe executable, example: singularity exec cont.sif /USTAR/build/ustar --help
+        # Testing on files: first run BCALM:
+        # singularity exec cont.sif /bcalm/build/bcalm -max-memory 15000 -nb-cores 16 -kmer-size 11 -in /bcalm/test/minitip.fa -all-abundance-counts
+        # Then run singularity exec cont.sif /USTAR/build/ustar -k 11 -i minitip.unitigs.fa
+        cd /
+
+        
+    ###################################################################################################################################
+    echo "Starting Fulgor"
+    cd /
+    git clone https://github.com/jermp/fulgor.git
+    cd fulgor
+    git submodule update --init --recursive
+
+    mkdir build
+    cd build
+    cmake ..
+    make -j
+
+    cd /
+    echo "Fulgor installed"
+
+    #TEST#
+    #The program is aviable at /fulgor/build/fulgor
+    # Builds an index in the .fur file
+    # The folder contains fasta file zipperd (.gz)
+    # First create a txt file by singularity exec out.sif find /fulgor/test_data/salmonella_10/ -type f > salmonella_10.txt Note: I modified the command to go around errors
+    # Now test using that file:
+    # singularity exec out.sif  /fulgor/build/fulgor build -l salmonella_10.txt -o salmonella_10_result -k 31 -m 19 -d tmp_dir -g 1 -t 1 --verbose --check
+    ###################################################################################################################################
+
+    echo "Starting REINDEER"
+    cd /
+    git clone --recursive https://github.com/kamimrcht/REINDEER.git
+    cd REINDEER
+    #Bare with this, I don't want to change the Makefile
+    make -j
+    cd /
+    echo "REINDEER installed"
+
+    #TEST#
+    #The program is at /REINDEER/Reindeer
+    #REINDEER assumes the input files to have been crated by BCALM
+    
+    #BUILD INDEX#
+        # With --index we provide a file that contains the names of the fasta files to use. It can be also provided in a different way (see /REINDEER/Reindeer --help)
+        # The file taken as an example has path relative to /REINDEER/test/. If the file has correct absolute paths I can just put the file name instead of the prefix.txt and just
+        # launch that command, without the first one
+
+        # singularity exec out.sif sh -c "sed 's|^|/REINDEER/test/|' /REINDEER/test/fof_unitigs.txt > prefixed.txt" (First create the file with the correct paths)
+        # singularity exec out.sif /REINDEER/Reindeer --index -f prefixed.txt -o outputIndexDir -k 31
+        # rm prefixed.txt (remove the temporary file)
+        #This provides us with the index files in the output folder
+        # K = 31 is the default. ########I CAN ALSO USE --nocount FOR JUST PRESENCE/ABSENCE########
+    
+    #QUERY#
+        # -q for the input query file (The query is a simple fasta file)
+        # -l for the directory of the index (created in the last step)
+        # -o for the output file
+        # singularity exec out.sif /REINDEER/Reindeer --query -q /REINDEER/test/query_test.fa -l outputIndexDir -o result_test.txt
+
+    ####################################################################################################################################
+
+    echo "Starting kmdiff"
+    cd /
+    git clone --recursive https://github.com/tlemane/kmdiff
+    cd kmdiff
+    #Note that I haveto specify which k-mer lengths to install 
+    ./install.sh -k "11 21 31 64 96 128"
+    cd /
+    echo "kmdiff installed"
+
+    #TEST#
+    # The program is at /kmdiff/kmdiff_build/bin/kmdiff ex:singularity exec buildTest.sif /kmdiff/kmdiff_build/bin/kmdiff -h
+    # A small dataset to test is in /kmdiff/examples/, the format is: (the text in front is mandatory)
+        ## control1: /path/to/control1_read1.fastq ; /path/to/control1_read2.fastq  ##        ### The ";" is only necessary when the reads for a sample are in two different files
+        ## control2: /path/to/control2_read1.fastq ; /path/to/control2_read2.fastq  ##        ### Case or CASE should be the same (case insensitive)
+        ## case1: /path/to/case1_read1.fastq ; /path/to/case1_read2.fastq           ##
+        ## case2: /path/to/case2_read1.fastq ; /path/to/case2_read2.fastq           ##
+    # Example extrapolated by the fof.txt file:
+        ## CONTROL0: data/control_0.fasta   ##                              ###In this case I need to modify the paths so that every one has /kmdiff/examples/ in front###
+        ## CONTROL1: data/control_1.fasta   ##
+        ## CONTROL2: data/control_2.fasta   ##
+        ## ....                             ##
+        ## CASE0: data/case_0.fasta         ##
+        ## CASE1: data/case_1.fasta         ##
+        ## CASE2: data/case_2.fasta         ##
+        ## CASE3: data/case_3.fasta         ##
+        ## ....                             ##
+    
+    # If the format uses absolute paths no need to do the conversion to the tmp file
+
+    ### COUNT K-MERS (count command)###
+        # singularity exec out.sif sh -c "sed 's#: #: /kmdiff/examples/#' /kmdiff/examples/fof.txt > temp_conv.txt"
+        # singularity exec out.sif /kmdiff/kmdiff_build/bin/kmdiff count --file temp_conv.txt --run-dir outputDir --kmer-size 31 --hard-min 2
+        # rm temp_conv.txt
+        # Parameters: 
+        # --file contains the paths of the run files (here we have it relative so we have to change the paths as we did with REINDEER)
+        # --run-dir is the output directory
+        # --kmer-size is the k-mer size from 8 to 127, default is 31 (you can alternatively use the -k flag for the same purpose)
+        # --hard-min is the minimum abundance to consider a k-mer (default 1)
+
+    ### DETECT SIGNIFICANT K-MERS (diff command) ###
+        # singularity exec out.sif /kmdiff/kmdiff_build/bin/kmdiff diff --km-run outputDir -1 10 -2 10 --output-dir outSecondPhase -s 0.01
+        # Parameters:
+        # --km-run is the directory where the results from the count phase are
+        # -1 is the number of control samples (here 10)
+        # -2 is the number of casees (here 10)
+        # --output-dir is the output directory of the second phase
+        # -s is the significance threshold (default 0.05, here I put 0.01)
+    ############################################################################################################################
+
+    echo "Starting GGCAT"
+    cd /
+    wget https://github.com/algbio/ggcat/releases/download/v2.0.0/ggcat-x86_64-unknown-linux-gnu.tar.gz
+    tar -xzf ggcat-x86_64-unknown-linux-gnu.tar.gz
+    rm ggcat-x86_64-unknown-linux-gnu.tar.gz
+    cd /
+    # TEST #
+    # The program is at /ggcat (it's not a folder it's right there)
+    # find "$inputFolder" -type f -exec realpath {} \; > in.txt
+    # singularity exec builtTest.sif /ggcat build -k <k_value> -j <threads_count> -l in.txt -o <output_file> -c 
+    # -c is needed to use colors
+
+    echo "Starting REINDEER2"
+    # I need GGCAT to do preprocessing, I can't just feed stuff into REINDEER2
+    cd /
+    git clone https://github.com/Yohan-HernandezCourbevoie/REINDEER2.git 
+    cd REINDEER2 && RUSTFLAGS="-C target-cpu=native" cargo build --release
+    echo "REINDEER2 installed"
+    cd /
+
+
+    # TEST #
+    # Program at /REINDEER2/target/release/Reindeer2
+
+    ### INDEXING ###
+    # mkdir ./out
+    # input is a file with the paths of the fasta files (one per line)
+    # First I need to use ggcat to count
+
+    # Then I do the real indexing
+    # find "$outFolder" -type f -exec realpath {} \; > inputREIN2.txt
+    # singularity exec $imagePath /REINDEER2/target/release/Reindeer2 --mode index --input "./inputREIN2.txt" --kmer $k -o $outREINDEER2 -t $cores
+    # -o is the output folder
+    # -t is the number of threads (default 1)
+    # --kmer is the k-mer size
+    # -a is the abundance granularity (defaullr: 255)
+    # -m Sets the minimizer size (default: 15)
+    # -p Sets the number of partitions (default: 512)
+    # -b Sets the Bloom filter size in log2 scale (default: 32)
+    # -A Sets the maximal abundance to take into account (default: 65024)
+    # -d If set, allows to index dense k-mers - i.e. shared k-mers among datasets - more efficiently, at the cost of higher RAM consumption (default: false)
+
+    # I have to create a temporaty file with the correct paths if I want to use the fof.txt since it's relative:
+    # Using test dataset: singularity exec out.sif bash -c "sed 's|^|/REINDEER2/|' /REINDEER2/test_files/fof.txt > /tmp/fof_prefixed.txt && /REINDEER2/target/release/Reindeer2 --mode index --input /tmp/fof_prefixed.txt --kmer 31 --output-dir ./index_test -t 8"
+
+    ### QUERING ###
+    # singularity exec out.sif /REINDEER2/target/release/Reindeer2 --mode query -f query.fasta -i ./index_dir -t 8 -c false
+    # -f Path to the FASTA file containing query sequences
+    # -i Path to the directory containing the prebuilt index
+    # -c bool for coloring a graph instead of regular query (default: false) ##### using this flag the output is a colored graph file
+    # -n bool for normalizing abundances based on sequencing depth estimates (default: false)
+    # -C Minimum proportion of kmers that must be present in the query sequence in order to propose an abundance value, 0 < C <= 1 (default: 0.5)
+    # -t Define a number of threads available (default: 1)
+    #### The reslut of a query will be in a file called /query_results.csv in the output folder, if colored graph is true the file will be /colored_graph.fa ####
+
+    # singularity exec out.sif /REINDEER2/target/release/Reindeer2 --mode query --fasta /REINDEER2/test_files/file1Q.fa --index ./index_test -c false
+
+    # Check the file to understand the run process

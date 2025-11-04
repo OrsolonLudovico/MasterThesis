@@ -4,4 +4,4 @@ The script [kmdiff_all_comp.slurm](./kmdiff_all_comp.slurm) is an example that r
 [createInput.sh](./createInput.sh) is needed to create a file containing the list of the paths of the genomes we want to analyze (kmdiff requires this input format).
 
 # Results
-Unfortunately, from my experiments, we found that compressing the datasets makes *kmdiff* unable to discover any differentially expressed k-mers.
+Unfortunately, from my experiments, we found that compressing the datasets makes *kmdiff* unable to discover any differentially expressed k-mers; this means that this tool is not suitable to use in tandem with USTAR.

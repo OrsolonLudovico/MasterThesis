@@ -4,4 +4,5 @@ I provided [DownloadGut.slurm](./DownloadGut.slurm) which downloads the files li
     - 18
 - Size:
     - 30 GB
+ 
 The dataset is aviable on the [EBI website](https://ftp.sra.ebi.ac.uk/vol1/fastq/ERR345/)

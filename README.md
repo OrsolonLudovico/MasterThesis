@@ -22,3 +22,7 @@ Using Singularity and a computing cluster. For more information, look into the d
 # Datasets
 
 You can find info about the datasets in the [datasets](./datasets) section.
+
+# Modify USTAR
+
+I also modified USTAR to make it do things it wasn't capable of doing before, all the details are into [this folder](./ModifyUSTAR) (I suggest reading the [Singularity](./Singularity/) section beforehand)

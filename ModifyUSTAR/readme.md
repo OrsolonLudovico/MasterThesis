@@ -12,4 +12,4 @@ For this reason, I used the original version for each of my Slurm jobs.
 
 ## About Cutterfish format from the Logan project
 
-I needed to add a way for USTAR to interpret the unitigs files taken from the [Logan project](https://github.com/IndexThePlanet/Logan/tree/main), doing this allowes us to ditch BCALM and directly use pre-made unitigs for a significantly faster execution 
+I needed to add a way for USTAR to interpret the unitigs files taken from the [Logan project](https://github.com/IndexThePlanet/Logan/tree/main), doing this allowes us to ditch BCALM and directly use pre-made unitigs for a significantly faster execution. the `.def` file that builds the new container is provided in this folder.

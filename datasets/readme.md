@@ -4,3 +4,5 @@ Using USTAR on the assemblies provided only a small compression due to the fact 
 Look in the sub-folders to get more information about the specific datasets I used.
 
 Using reads means that we have to rely on BCALM2 to produce unitigs, which is slow. We could download directly the unitigs from the [Logan](https://github.com/IndexThePlanet/Logan/tree/main) project. In the [Logan folder](./Logan) there are some scripts that dowloads unitigs and corresponding reads.
+
+The datasets downloaded using Logan are in the [unitigs](./Unitigs/) folder.

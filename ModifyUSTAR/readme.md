@@ -1,4 +1,4 @@
-# Modifyng USTAR
+# modifying USTAR
 
 ## About Input files:
 

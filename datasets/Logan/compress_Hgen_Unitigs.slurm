@@ -11,9 +11,7 @@
 #SBATCH --mem 100G
 
 ### CONFIGURATION VARIABLES #####################################################
-#### I'm using the modified version of USTAR now ####
 imagePath="/nfsd/bcb/bcbg/Orsolon/imageUSTARmod.sif"
-### WARNING: DO NOT PUT THE "/" AT THE END OF INPUT FOLDER
 inputFolder="/nfsd/bcb/bcbg/Orsolon/datasetsOrsolon/LoganUnitigs/HumanGenomeUnitigs/1000/unitigs"
 k=31
 outputFolder="./compressed"
@@ -32,26 +30,34 @@ echo "Total .unitigs.fa files found: $totalFiles"
 : "${OMP_NUM_THREADS:=${SLURM_CPUS_PER_TASK:-8}}"
 export OMP_NUM_THREADS
 
+# Master error log
+master_err_log="$outputFolder/CompressGen-errors.log"
+
 # Process each unitigs.fa file in the input directory
 for input in "$inputFolder"/*.unitigs.fa; do
 
     # Skip if the glob didn't match any files
     [ -f "$input" ] || continue
 
-    file=$(basename "$input")                            # ex: "sample.unitigs.fa"
-    base="${file%.unitigs.fa}"                          # ex: "sample"
+    file=$(basename "$input")                            
+    base="${file%.unitigs.fa}"                          
 
     echo "------------------------------------------------------------"
     echo "Processing file: $file"
     echo "Base name: $base"
 
-    # USTAR cannot process SEQUENCE lines >= 6,000,000 characters
-    # We check only **non-header** lines (skip lines starting with '>')
+    ### NEW CHECK: SKIP IF ALREADY COMPRESSED ###
+    if [ -f "$outputFolder/${base}.ustar.fa" ]; then
+        echo "Output already exists for $base — skipping."
+        echo "$(date '+%Y-%m-%d %H:%M:%S') - SKIPPED (already processed) $file" >> "$master_err_log"
+        continue
+    fi
+    ############################################
+
     echo "Checking if unitigs file is compatible with USTAR (no sequence line >= 6,000,000 chars)..."
 
     # Temporarily disable strict error handling for this check
     set +e
-    # awk: skip header lines, if any sequence line is >= 6000000 exit with code 1
     awk '/^>/ { next } length($0) >= 6000000 { exit 1 }' "$input"
     check_result=$?
     set -e
@@ -60,27 +66,43 @@ for input in "$inputFolder"/*.unitigs.fa; do
         echo "File is compatible, running USTAR on $file..."
         echo "Command: singularity exec -B /nfsd:/nfsd $imagePath /USTAR/build/ustar -i $file -k $k -s+aa -x-c -o ${base}.ustar.fa"
 
-        # Run USTAR (limit threads via OMP_NUM_THREADS)
-        OMP_NUM_THREADS="$OMP_NUM_THREADS" singularity exec -B /nfsd:/nfsd "$imagePath" /USTAR/build/ustar -i "$input" -k $k -s+aa -x-c -o "${base}.ustar.fa"
+        # Prepare per-file logs
+        stdout_log="$outputFolder/${base}.ustar.log"
+        stderr_log="$outputFolder/${base}.ustar.err"
 
-        # Move final compressed result to output directory
-        if [ -f "${base}.ustar.fa" ]; then
-            mv "${base}.ustar.fa" "$outputFolder/"
-            echo "Successfully produced: $outputFolder/${base}.ustar.fa"
+        # Run USTAR (limit threads via OMP_NUM_THREADS), capture stdout/stderr
+        if OMP_NUM_THREADS="$OMP_NUM_THREADS" singularity exec -B /nfsd:/nfsd "$imagePath" \
+            /USTAR/build/ustar -i "$input" -k "$k" -s+aa -x-c -o "${base}.ustar.fa" \
+            >"$stdout_log" 2>"$stderr_log"; then
+
+            if [ -f "${base}.ustar.fa" ]; then
+                mv "${base}.ustar.fa" "$outputFolder/"
+                echo "Successfully produced: $outputFolder/${base}.ustar.fa"
+            else
+                echo "WARNING: USTAR finished but output file missing for $file" | tee -a "$master_err_log"
+            fi
+
+            # Cleanup USTAR-generated auxiliary files
+            rm -f "${base}.ustar.counts" || true
+            rm -f ./*.h5 || true
+
         else
-            echo "ERROR: USTAR did not produce ${base}.ustar.fa for $file"
-        fi
+            echo "##################################################################"
+            echo "ERROR: USTAR failed on $file -- see logs:"
+            echo "  stdout: $stdout_log"
+            echo "  stderr: $stderr_log"
+            echo "##################################################################"
 
-        # Cleanup USTAR-generated auxiliary files (keep original .unitigs.fa intact)
-        rm -f "${base}.ustar.counts" || true
-        rm -f ./*.h5 || true
+            echo "$(date '+%Y-%m-%d %H:%M:%S') - FAILURE for $file. See $stderr_log" >> "$master_err_log"
+            continue
+        fi
 
     else
         echo "##################################################################"
-        echo "Skipping USTAR for $file - unitigs file has sequence lines >= 6,000,000 characters"
-        echo "  (USTAR cannot handle sequence lines >= 6,000,000 characters)"
+        echo "Skipping USTAR for $file - sequence line >= 6,000,000 characters"
         echo "##################################################################"
-        # NON cancelliamo il file di input: lasciamo l'utente decidere come gestirlo
+
+        echo "$(date '+%Y-%m-%d %H:%M:%S') - SKIPPED (too long) $file" >> "$master_err_log"
         continue
     fi
 
@@ -93,5 +115,4 @@ echo "Results saved in: $outputFolder"
 echo "Total files processed: $(ls -1 "$outputFolder"/*.ustar.fa 2>/dev/null | wc -l)"
 echo "Job runtime: $SECONDS seconds"
 
-# Optional: show disk usage of output directory
-echo "Output directory size: $(du -sh "$outputFolder" 2>/dev/null || echo "N/A")"
+echo "Output directory size: $(du -sh "$outputFolder" 2>/dev/null || echo 'N/A')"

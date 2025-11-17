@@ -98,21 +98,25 @@ void DBG::parse_bcalm_file() {
             sscanf(line.c_str(), "%*c %zd %*5c %d %[^\n]s", &serial, &node.length, dyn_line);
         } else {// #### Cutterfish2 format ####
             // ALTERNATIVE FORMAT PARSING
-            // Example: >SRR11905265_0 ka:f:1.0 L:-:27885434:-
-            // The ID follows pattern: PREFIX_NUMBER where NUMBER is the serial
+            // Two supported patterns:
+            // 1) Named: >SRR11905265_0 ka:f:1.0 L:-:27885434:-
+            // 2) Simple: >0 ka:f:1.0 L:-:27885434:-
             
             // Find the underscore that separates prefix from serial number
             size_t underscore_pos = line.find('_');
-            if(underscore_pos == string::npos){
-                cerr << "parse_bcalm_file(): Alternative format requires NAME_NUMBER pattern (e.g., SRR11905265_0)!" << endl;
-                exit(EXIT_FAILURE);
-            }
+            size_t space_pos = line.find(' ', 1); // Find first space after '>'
             
-            // Extract the serial number: everything between '_' and first space
-            // Example: "SRR11905265_0 ka:f:..." -> extract "0"
-            size_t space_pos = line.find(' ', underscore_pos);
-            string serial_str = line.substr(underscore_pos + 1, space_pos - underscore_pos - 1);
-            serial = stoull(serial_str);  // Convert string to unsigned long long
+            if(underscore_pos != string::npos && underscore_pos < space_pos){
+                // Pattern: NAME_NUMBER (e.g., >SRR11905265_0)
+                // Extract the serial number: everything between '_' and first space
+                string serial_str = line.substr(underscore_pos + 1, space_pos - underscore_pos - 1);
+                serial = stoull(serial_str);  // Convert string to unsigned long long
+            } else {
+                // Pattern: NUMBER only (e.g., >0)
+                // Extract the serial number: everything between '>' and first space
+                string serial_str = line.substr(1, space_pos - 1);
+                serial = stoull(serial_str);  // Convert string to unsigned long long
+            }
             
             // Copy the rest of the line (after first space) to dyn_line for further parsing
             // This will contain: "ka:f:1.0 L:-:27885434:-"

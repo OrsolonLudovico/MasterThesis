@@ -156,12 +156,6 @@ The script automatically converts downloaded FASTQ files to FASTA format using t
 ```bash
 awk 'NR%4==1 {print ">" substr($0, 2)} NR%4==2 {print}' file.fastq > file.fasta
 ```
-
-This command:
-- Processes every 4th line starting from line 1 (sequence header): removes `@` and adds `>`
-- Processes every 4th line starting from line 2 (sequence): keeps as-is
-- Skips quality score lines (lines 3 and 4 of each FASTQ record)
-
 After conversion, the original FASTQ file is automatically deleted.
 
 **Requirements**:
@@ -188,44 +182,8 @@ After conversion, the original FASTQ file is automatically deleted.
 - Extracted files in the same directory
 - Original `.zst` files are removed
 
-## Complete Usage Examples
 
-### Scenario 1: Quick download of 5 samples for testing
-```bash
-./4_download_paired_sra_logan.sh 5 list_accessions_human.txt ./test_sra ./test_logan
-```
-
-### Scenario 2: Download a dataset of 100 samples
-```bash
-./4_download_paired_sra_logan.sh 100 list_accessions_human.txt ./sra_reads ./logan_unitigs
-```
-
-### Scenario 3: Download only from SRA
-```bash
-./3_download_reads_from_sra.sh my_accessions.txt ./sra_only
-```
-
-### Scenario 4: Download only from Logan
-```bash
-./2_download_and_extract_unitigs_from_logan.sh my_accessions.txt ./logan_only
-```
-
-## Output Directory Structure
-
-```
-logan/
-├── sra_reads/
-│   ├── SRR12345678.fasta
-│   ├── ERR98765432.fasta
-│   └── DRR11223344.fasta
-├── logan_unitigs/
-│   ├── SRR12345678.unitigs.fa
-│   ├── ERR98765432.unitigs.fa
-│   └── DRR11223344.unitigs.fa
-└── successful_accessions.txt
-```
-
-## Important Notes
+## Notes
 
 1. **Logan CSV Required**: Script 4 requires `logan_accessions_v1.1_SRA2023.csv` to be extracted in the same directory. Extract it once with:
    ```bash
@@ -243,10 +201,3 @@ logan/
 6. **FASTA vs FASTQ**: Scripts download in FASTA format (without quality scores) to save space
 
 7. **Paired-end**: Paired-end files are automatically concatenated into a single file
-
-## Links
-
-- **Logan Project**: https://github.com/IndexThePlanet/Logan
-- **SRA List**: https://github.com/IndexThePlanet/Logan/blob/main/SRA_list.md
-- **SRA Toolkit**: https://github.com/ncbi/sra-tools
-- **AWS CLI Documentation**: https://aws.amazon.com/cli/

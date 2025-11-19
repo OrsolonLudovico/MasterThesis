@@ -1,0 +1,68 @@
+BootStrap: library
+From: ubuntu:22.04
+
+%labels
+    Author OrsolonLudovico
+    Version 1.1
+    Description Container with tools for downloading and extracting files from Logan and SRA (AWS CLI, zstd, wget, curl, SRA Toolkit)
+
+%help
+    This container provides utilities for downloading and extracting files from Logan database and SRA.
+    
+    Installed tools:
+    - zstd: for decompressing .zst files
+    - awscli: for downloading from S3 buckets (s3://logan-pub/)
+    - SRA Toolkit: for downloading reads from SRA (fasterq-dump, prefetch)
+    - wget, curl: for downloading files
+    - text processing: awk, sed, grep, cut, sort, tr, head, tail, wc, xargs, shuf
+    - basic file utilities
+    
+    Usage examples:
+    
+    # Download from Logan S3
+    singularity exec utility.sif aws s3 cp s3://logan-pub/u/SRR123/SRR123.unitigs.fa.zst . --no-sign-request
+    
+    # Decompress zst file
+    singularity exec utility.sif zstd -d file.unitigs.fa.zst
+    
+    # Download from SRA
+    singularity exec utility.sif fasterq-dump SRR123 --outdir ./output
+    
+    # Download with wget
+    singularity exec utility.sif wget https://example.com/file.tar.gz
+
+%environment
+    export PATH=/usr/local/bin:$PATH
+
+%post
+    echo "### Starting update + install utilities ###"
+
+    apt-get update 
+    
+    # Install compression tools
+    apt-get install -y --no-install-recommends zstd
+    
+    # Install download tools
+    apt-get install -y --no-install-recommends wget curl
+    
+    # Install AWS CLI
+    apt-get install -y --no-install-recommends awscli
+    
+    # Install SRA Toolkit
+    apt-get install -y --no-install-recommends sra-toolkit
+    
+    # Install text processing and core utilities (awk, sed, grep, cut, sort, tr, head, tail, wc, xargs, shuf)
+    apt-get install -y --no-install-recommends \
+        gawk \
+        coreutils \
+        findutils \
+        grep \
+        sed
+    
+    # Install basic utilities
+    apt-get install -y --no-install-recommends ca-certificates
+    
+    apt-get clean
+    rm -rf /var/lib/apt/lists/*
+    
+    echo "### Utilities installed successfully ###"

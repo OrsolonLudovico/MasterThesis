@@ -10,3 +10,6 @@ Note: You have to use a modified version of USTAR to read the format provided by
 
 ## Check correctness
 You can look into the [Download both](./Download_both_from_sra_and_Logan/) folder to see how to dowload the same file from Logan and sra simultaniously.
+
+## Supporting tools:
+I decided to build an helper image that contains the programs needed to elaborate the download of Logan files. The corresponding `.def` [file](./utility.def) is provided here

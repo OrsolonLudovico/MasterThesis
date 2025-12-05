@@ -1,0 +1,15 @@
+*.aux
+*.fls
+*.log
+*.out
+*.synctex.gz
+*.toc
+*.xmpi
+*.fdb_latexmk
+.trunk
+.DS_Store
+*.bcf
+*.run.xml
+*.blg
+*.bbl
+*.pdf

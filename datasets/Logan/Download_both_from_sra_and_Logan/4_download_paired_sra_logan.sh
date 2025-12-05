@@ -2,13 +2,14 @@
 
 # Script to download N accessions from both SRA and Logan
 # Only downloads from Logan those successfully downloaded from SRA
-# Usage: ./download_paired_sra_logan.sh <num_files> <accessions_list.txt> [sra_output_dir] [logan_output_dir]
+# Usage: ./download_paired_sra_logan.sh <num_files> <accessions_list.txt> [sra_output_dir] [logan_output_dir] [logan_csv]
 
 set -e
 
 if [ "$#" -lt 2 ]; then
-    echo "Usage: $0 <num_files> <accessions_list.txt> [sra_output_dir] [logan_output_dir]"
+    echo "Usage: $0 <num_files> <accessions_list.txt> [sra_output_dir] [logan_output_dir] [logan_csv]"
     echo "Example: $0 10 list_accessions_human.txt ./sra_reads ./logan_unitigs"
+    echo "Example: $0 10 list_accessions_human.txt ./sra_reads ./logan_unitigs custom_logan.csv"
     exit 1
 fi
 
@@ -16,6 +17,7 @@ NUM_FILES="$1"
 ACCESSIONS_FILE="$2"
 SRA_OUTPUT_DIR="${3:-./sra_reads}"
 LOGAN_OUTPUT_DIR="${4:-./logan_unitigs}"
+LOGAN_CSV="${5:-logan_accessions_v1.1_SRA2023.csv}"
 
 # Check if accessions file exists
 if [ ! -f "$ACCESSIONS_FILE" ]; then
@@ -24,10 +26,11 @@ if [ ! -f "$ACCESSIONS_FILE" ]; then
 fi
 
 # Check if Logan CSV exists
-LOGAN_CSV="logan_accessions_v1.1_SRA2023.csv"
 if [ ! -f "$LOGAN_CSV" ]; then
     echo "Error: Logan CSV file $LOGAN_CSV not found!"
-    echo "Please extract it first: zstdcat logan_accessions_v1.1_SRA2023.csv.zst > logan_accessions_v1.1_SRA2023.csv"
+    if [ "$LOGAN_CSV" = "logan_accessions_v1.1_SRA2023.csv" ]; then
+        echo "Please extract it first: zstdcat logan_accessions_v1.1_SRA2023.csv.zst > logan_accessions_v1.1_SRA2023.csv"
+    fi
     exit 1
 fi
 
@@ -51,11 +54,21 @@ LOGAN_TOTAL=$(wc -l < "$TEMP_LOGAN_ACCESSIONS")
 echo "  ✓ Found $LOGAN_TOTAL accessions available in Logan"
 echo ""
 
+# Count total available accessions in input file that are also in Logan
+TOTAL_AVAILABLE=$(cut -d',' -f1 "$ACCESSIONS_FILE" | tr -d '"' | grep -F -f "$TEMP_LOGAN_ACCESSIONS" | wc -l)
+echo "Total accessions available in both input file and Logan: $TOTAL_AVAILABLE"
+if [ "$TOTAL_AVAILABLE" -lt "$NUM_FILES" ]; then
+    echo "⚠ WARNING: Only $TOTAL_AVAILABLE accessions available, but you requested $NUM_FILES files."
+    echo "⚠ The script will download as many as possible."
+fi
+echo ""
+
 echo "=========================================="
 echo "DOWNLOAD PAIRED SRA + LOGAN FILES"
 echo "=========================================="
 echo "Target number of files: $NUM_FILES"
 echo "Accessions source: $ACCESSIONS_FILE"
+echo "Logan CSV reference: $LOGAN_CSV"
 echo "SRA output directory: $SRA_OUTPUT_DIR"
 echo "Logan output directory: $LOGAN_OUTPUT_DIR"
 echo "Start: $(date)"
@@ -170,16 +183,52 @@ while true; do
     
     # Calculate how many more we need
     REMAINING=$((NUM_FILES - SUCCESSFUL_COUNT))
-    echo "Step 4: Need $REMAINING more files. Adding new random accessions..."
+    echo "Step 4: Need $REMAINING more files. Checking for new accessions..."
+    
+    # Count how many unique accessions we've tried so far
+    ATTEMPTED_COUNT=$(wc -l < "$TEMP_ACCESSIONS")
+    
+    # Check if we've exhausted all available accessions
+    if [ "$ATTEMPTED_COUNT" -ge "$TOTAL_AVAILABLE" ]; then
+        echo ""
+        echo "========================================="
+        echo "⚠ NO MORE ACCESSIONS AVAILABLE"
+        echo "========================================="
+        echo "All available accessions have been attempted."
+        echo "Successfully downloaded: $SUCCESSFUL_COUNT files (target was $NUM_FILES)"
+        echo "Total accessions attempted: $ATTEMPTED_COUNT / $TOTAL_AVAILABLE"
+        echo ""
+        echo "Cannot reach target of $NUM_FILES files."
+        echo "Proceeding with the $SUCCESSFUL_COUNT files successfully downloaded."
+        echo "========================================="
+        break
+    fi
     
     # Add some extra to account for potential failures (add 50% more than needed)
     EXTRA=$((REMAINING + REMAINING / 2))
     
     # Filter out already attempted accessions and add new ones
     cp "$TEMP_ACCESSIONS" "${TEMP_ACCESSIONS}.old"
+    BEFORE_COUNT=$(wc -l < "$TEMP_ACCESSIONS")
     get_random_accessions "$EXTRA"
+    AFTER_COUNT=$(wc -l < "$TEMP_ACCESSIONS")
+    NEW_ADDED=$((AFTER_COUNT - BEFORE_COUNT))
     
-    echo "  ✓ Added $EXTRA new accessions to try"
+    if [ "$NEW_ADDED" -eq 0 ]; then
+        echo ""
+        echo "========================================="
+        echo "⚠ NO NEW ACCESSIONS FOUND"
+        echo "========================================="
+        echo "Could not find any new accessions to try."
+        echo "Successfully downloaded: $SUCCESSFUL_COUNT files (target was $NUM_FILES)"
+        echo ""
+        echo "Cannot reach target of $NUM_FILES files."
+        echo "Proceeding with the $SUCCESSFUL_COUNT files successfully downloaded."
+        echo "========================================="
+        break
+    fi
+    
+    echo "  ✓ Added $NEW_ADDED new accessions to try (Total attempted: $AFTER_COUNT / $TOTAL_AVAILABLE)"
     echo ""
     
     ITERATION=$((ITERATION + 1))

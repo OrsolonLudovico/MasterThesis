@@ -12,7 +12,7 @@ Using Singularity and a computing cluster. For more information, look into the d
 
 # Which tool did I use?
 
-[USTAR](./tools/USTAR): GitHub page [here](https://github.com/enricorox/USTAR)  
+USTAR: GitHub page [here](https://github.com/enricorox/USTAR)  
 [Fulgor](./tools/Fulgor): GitHub page [here](https://github.com/jermp/fulgor)  
 [GGCAT](./tools/GGCAT): GitHub page [here](https://github.com/algbio/ggcat)  
 [Kmdiff](./tools/Kmdiff): GitHub page [here](https://github.com/tlemane/kmdiff)   

@@ -1,4 +1,4 @@
-# My master thesis (change this when we know the name)
+# Exploring how k-mer based compression speeds up many bioinformatics applications
 
 This is the repository where I'll store and explain my work towards the master thesis.
 

@@ -18,6 +18,8 @@ USTAR: GitHub page [here](https://github.com/enricorox/USTAR)
 [Kmdiff](./tools/Kmdiff): GitHub page [here](https://github.com/tlemane/kmdiff)   
 [Mash](./tools/Mash): GitHub page [here](https://github.com/marbl/Mash)  
 [REINDEER2](./tools/REINDEER2): GitHub page [here](https://github.com/Yohan-HernandezCourbevoie/REINDEER2)  
+    
+A summary of all the tools' results is reported in spreadsheet foramt inside the [tools](/tools/Tools_results_statistics.xlsx) folder.
 
 ## Datasets
 

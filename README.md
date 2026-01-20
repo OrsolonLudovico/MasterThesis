@@ -1,16 +1,16 @@
 # Exploring how k-mer based compression speeds up many bioinformatics applications
 
-This is the repository where I'll store and explain my work towards the master thesis.
+This is the repository where I'll store and explain my work towards the master thesis which can be found [here].
 
-# What's my thesis about?
+## What's this thesis about?
 
 Briefly: I used a tool called [USTAR](https://github.com/enricorox/USTAR) to compress genome datasets and evaluated how well this compression works in tandem with various tools.
 
-## How?
+### How?
 
 Using Singularity and a computing cluster. For more information, look into the dedicated section: [Singularity](./Singularity).
 
-# Which tool did I use?
+## Which tool did I use?
 
 USTAR: GitHub page [here](https://github.com/enricorox/USTAR)  
 [Fulgor](./tools/Fulgor): GitHub page [here](https://github.com/jermp/fulgor)  
@@ -19,10 +19,10 @@ USTAR: GitHub page [here](https://github.com/enricorox/USTAR)
 [Mash](./tools/Mash): GitHub page [here](https://github.com/marbl/Mash)  
 [REINDEER2](./tools/REINDEER2): GitHub page [here](https://github.com/Yohan-HernandezCourbevoie/REINDEER2)  
 
-# Datasets
+## Datasets
 
 You can find info about the datasets in the [datasets](./datasets) section.
 
-# Modify USTAR
+## Modify USTAR
 
 I also modified USTAR to make it do things it wasn't capable of doing before, all the details are into [this folder](./ModifyUSTAR) (I suggest reading the [Singularity](./Singularity/) section beforehand)

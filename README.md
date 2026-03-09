@@ -27,4 +27,4 @@ You can find info about the datasets in the [datasets](./datasets) section.
 
 ## Modify USTAR
 
-I also modified USTAR to make it do things it wasn't capable of doing before, all the details are into [this folder](./ModifyUSTAR) (I suggest reading the [Singularity](./Singularity/) section beforehand)
+I also modified USTAR to make it do things it wasn't capable of doing before, all the details are into [this folder](./ModifyUSTAR) Reading the [Singularity](./Singularity/) section beforehand is suggested.
